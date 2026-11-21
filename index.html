@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7fb">
+  <title>오늘의 출석 | 클래스노트</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #20243a;
+      --muted: #85899d;
+      --line: #eceef4;
+      --surface: #fff;
+      --canvas: #f6f7fb;
+      --purple: #6b63db;
+      --purple-dark: #554dc4;
+      --purple-soft: #f0efff;
+      --green: #2da678;
+      --green-soft: #e9f7f1;
+      --orange: #e79448;
+      --orange-soft: #fff4e8;
+      --blue: #5b8de0;
+      --blue-soft: #edf4ff;
+      --red: #df6e73;
+      --red-soft: #fff0f0;
+      --shadow: 0 12px 35px rgb(34 38 68 / 5%);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, textarea, select { font: inherit; }
+    button { color: inherit; }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 3;
+      display: flex;
+      width: 238px;
+      flex-direction: column;
+      padding: 28px 17px 20px;
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 12px; }
+    .brand-mark {
+      display: grid;
+      width: 37px;
+      height: 37px;
+      place-items: center;
+      border-radius: 12px;
+      background: var(--purple);
+      color: white;
+      font-size: 19px;
+      font-weight: 800;
+    }
+    .brand-name { font-size: 16px; font-weight: 750; letter-spacing: -.5px; }
+    .brand-caption { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .nav-label { margin: 40px 12px 12px; color: #a0a3b2; font-size: 10px; font-weight: 750; letter-spacing: 1px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 43px;
+      margin: 2px 0;
+      padding: 0 13px;
+      border-radius: 10px;
+      color: #73778c;
+      font-weight: 600;
+    }
+    .nav-item.active { background: var(--purple-soft); color: var(--purple-dark); }
+    .nav-icon { width: 19px; text-align: center; font-size: 16px; }
+    .sidebar-bottom { margin-top: auto; }
+    .class-card {
+      margin: 0 3px 16px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #fcfcfe;
+    }
+    .class-card-label { color: var(--muted); font-size: 11px; }
+    .class-name { margin-top: 8px; font-weight: 700; }
+    .class-count { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .profile { display: flex; align-items: center; gap: 10px; padding: 13px 10px 0; border-top: 1px solid var(--line); }
+    .avatar { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: #fce9df; color: #b36b48; font-weight: 750; }
+    .profile-name { font-size: 12px; font-weight: 700; }
+    .profile-role { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    main { width: calc(100% - 238px); margin-left: 238px; }
+    .topbar {
+      display: flex;
+      height: 76px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 42px;
+      background: rgb(255 255 255 / 82%);
+      border-bottom: 1px solid var(--line);
+    }
+    .breadcrumb { color: var(--muted); font-size: 12px; }
+    .breadcrumb strong { margin-left: 8px; color: var(--ink); font-weight: 650; }
+    .top-actions { display: flex; align-items: center; gap: 14px; }
+    .today-pill { padding: 7px 11px; border-radius: 20px; background: #f2f3f8; color: #6e7285; font-size: 11px; font-weight: 600; }
+    .content { width: min(1120px, 100%); margin: 0 auto; padding: 37px 42px 60px; }
+    .page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+    .eyebrow { color: var(--purple); font-size: 11px; font-weight: 750; letter-spacing: .8px; }
+    h1 { margin: 8px 0 0; font-size: 26px; letter-spacing: -1.2px; }
+    .subtitle { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+    .heading-actions { display: flex; gap: 9px; padding-top: 4px; }
+    .button {
+      display: inline-flex;
+      min-height: 39px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 14px;
+      border: 1px solid #e6e7ee;
+      border-radius: 9px;
+      background: white;
+      color: #55596e;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+      transition: .15s ease;
+    }
+    .button:hover { border-color: #c9c6f7; color: var(--purple-dark); }
+    .button.primary { border-color: var(--purple); background: var(--purple); color: white; }
+    .button.primary:hover { background: var(--purple-dark); }
+    .button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #aaa5ff; outline-offset: 2px; }
+    .date-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 29px;
+      padding: 15px 18px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .date-navigation { display: flex; align-items: center; gap: 13px; }
+    .date-arrow { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: white; cursor: pointer; color: #777b8d; font-size: 16px; }
+    .date-arrow:hover { background: #f7f6ff; color: var(--purple); }
+    .date-value { min-width: 190px; }
+    .date-value input { width: 100%; padding: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 15px; font-weight: 750; cursor: pointer; }
+    .date-description { margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .date-side { display: flex; align-items: center; gap: 10px; }
+    .date-side .button { min-height: 34px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+    .summary-card {
+      position: relative;
+      min-height: 112px;
+      overflow: hidden;
+      padding: 17px 18px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .summary-card::after { position: absolute; right: -14px; bottom: -27px; width: 82px; height: 82px; border-radius: 50%; background: var(--tint); content: ""; opacity: .8; }
+    .summary-head { display: flex; align-items: center; gap: 7px; color: #777b8d; font-size: 11px; font-weight: 650; }
+    .summary-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+    .summary-number { position: relative; z-index: 1; margin-top: 14px; font-size: 25px; font-weight: 760; letter-spacing: -1px; }
+    .summary-number span { margin-left: 3px; color: #9a9daf; font-size: 12px; font-weight: 500; letter-spacing: 0; }
+    .roster-card { margin-top: 22px; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+    .roster-header { display: flex; min-height: 72px; align-items: center; justify-content: space-between; gap: 15px; padding: 15px 20px; border-bottom: 1px solid var(--line); }
+    .roster-title { display: flex; align-items: baseline; gap: 9px; font-size: 15px; font-weight: 750; }
+    .roster-total { color: var(--muted); font-size: 11px; font-weight: 500; }
+    .roster-tools { display: flex; align-items: center; gap: 9px; }
+    .search { position: relative; }
+    .search input { width: 178px; height: 35px; padding: 0 11px 0 31px; border: 1px solid var(--line); border-radius: 8px; background: #fcfcfe; font-size: 11px; }
+    .search span { position: absolute; top: 9px; left: 10px; color: #a0a3b2; font-size: 13px; }
+    .roster-tools .button { min-height: 35px; padding: 0 11px; font-size: 11px; }
+    .table-wrap { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { height: 42px; padding: 0 20px; background: #fcfcfe; color: #999cad; font-size: 10px; font-weight: 650; white-space: nowrap; }
+    td { height: 61px; padding: 0 20px; border-top: 1px solid #f1f2f6; color: #4b4f63; font-size: 12px; white-space: nowrap; }
+    th:first-child, td:first-child { width: 52px; padding-right: 0; }
+    th:last-child, td:last-child { width: 52px; padding-left: 0; }
+    .student-number { color: #afb1bf; font-size: 11px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+    .student-cell { display: flex; align-items: center; gap: 10px; color: #35394e; font-weight: 650; }
+    .student-avatar { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 10px; background: #f0efff; color: var(--purple); font-size: 12px; font-weight: 750; }
+    .status-select { min-width: 98px; height: 30px; padding: 0 24px 0 10px; border: 1px solid transparent; border-radius: 7px; appearance: none; background-color: var(--status-bg, #f3f4f7); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='m2 3.5 3 3 3-3' fill='none' stroke='%23777b8d' stroke-width='1.3'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; color: var(--status-color, #777b8d); cursor: pointer; font-size: 11px; font-weight: 650; }
+    .status-select:hover { border-color: #dedee8; }
+    .note-cell { color: #9a9dae; font-size: 11px; }
+    .remove-button { display: grid; width: 28px; height: 28px; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #b3b5c1; cursor: pointer; font-size: 16px; }
+    .remove-button:hover { background: var(--red-soft); color: var(--red); }
+    .empty-state { padding: 49px 20px 52px; text-align: center; }
+    .empty-icon { display: grid; width: 50px; height: 50px; margin: 0 auto 14px; place-items: center; border-radius: 16px; background: var(--purple-soft); color: var(--purple); font-size: 22px; }
+    .empty-title { color: #45495d; font-size: 13px; font-weight: 700; }
+    .empty-copy { margin: 7px 0 17px; color: var(--muted); font-size: 11px; }
+    .table-footer { display: flex; min-height: 47px; align-items: center; justify-content: space-between; padding: 0 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+    .legend { display: flex; gap: 14px; }
+    .legend span { display: flex; align-items: center; gap: 5px; }
+    .legend i { width: 6px; height: 6px; border-radius: 50%; background: var(--dot); }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center; padding: 18px; background: rgb(28 30 48 / 38%); }
+    .modal-backdrop.open { display: flex; }
+    .modal { width: min(460px, 100%); padding: 24px; border-radius: 16px; background: white; box-shadow: 0 24px 80px rgb(20 22 42 / 20%); }
+    .modal h2 { margin: 0; font-size: 17px; letter-spacing: -.4px; }
+    .modal-copy { margin: 8px 0 17px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .modal textarea { width: 100%; min-height: 145px; resize: vertical; padding: 12px; border: 1px solid #e6e7ee; border-radius: 9px; line-height: 1.7; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .toast { position: fixed; right: 24px; bottom: 24px; z-index: 12; padding: 12px 16px; transform: translateY(15px); border-radius: 10px; background: #282b40; color: white; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: .2s ease; font-size: 12px; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    @media (max-width: 900px) {
+      .sidebar { width: 200px; }
+      main { width: calc(100% - 200px); margin-left: 200px; }
+      .topbar { padding: 0 25px; }
+      .content { padding: 31px 25px 48px; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 650px) {
+      .sidebar { position: static; width: 100%; height: auto; padding: 14px 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .app { display: block; }
+      .brand { padding: 0; }
+      .brand-mark { width: 34px; height: 34px; }
+      .nav-label, .nav-item, .sidebar-bottom { display: none; }
+      main { width: 100%; margin: 0; }
+      .topbar { height: 48px; padding: 0 17px; }
+      .breadcrumb { font-size: 11px; }
+      .today-pill { padding: 6px 9px; font-size: 10px; }
+      .content { padding: 25px 16px 38px; }
+      .page-heading { display: block; }
+      h1 { font-size: 23px; }
+      .heading-actions { margin-top: 17px; }
+      .heading-actions .button { flex: 1; }
+      .date-panel { align-items: flex-start; margin-top: 20px; padding: 13px; }
+      .date-navigation { gap: 8px; }
+      .date-value { min-width: 0; }
+      .date-value input { font-size: 13px; }
+      .date-description { font-size: 10px; }
+      .date-side { gap: 6px; }
+      .date-side .button { min-height: 31px; padding: 0 9px; font-size: 10px; }
+      .summary-grid { gap: 9px; margin-top: 13px; }
+      .summary-card { min-height: 98px; padding: 14px; }
+      .summary-number { margin-top: 12px; font-size: 23px; }
+      .roster-card { margin-top: 16px; }
+      .roster-header { display: block; padding: 15px; }
+      .roster-tools { margin-top: 12px; }
+      .search { flex: 1; }
+      .search input { width: 100%; }
+      .roster-tools .button { flex-shrink: 0; }
+      th { padding: 0 13px; }
+      td { padding: 0 13px; }
+      .table-footer { align-items: flex-start; flex-direction: column; justify-content: center; gap: 8px; padding: 12px 14px; }
+      .legend { flex-wrap: wrap; gap: 8px 12px; }
+    }
+    @media (max-width: 380px) {
+      .date-panel { flex-wrap: wrap; }
+      .date-navigation { flex: 1; }
+      .date-side { width: 100%; justify-content: flex-end; }
+      .heading-actions { gap: 6px; }
+      .heading-actions .button { padding: 0 8px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="주 메뉴">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">C</div>
+        <div><div class="brand-name">클래스노트</div><div class="brand-caption">선생님을 위한 교실 도구</div></div>
+      </div>
+      <div class="nav-label">MENU</div>
+      <div class="nav-item active"><span class="nav-icon" aria-hidden="true">▦</span>출석 체크</div>
+      <div class="nav-item"><span class="nav-icon" aria-hidden="true">▤</span>출석 기록</div>
+      <div class="nav-item"><span class="nav-icon" aria-hidden="true">⚙</span>반 설정</div>
+      <div class="sidebar-bottom">
+        <div class="class-card">
+          <div class="class-card-label">내가 관리하는 반</div>
+          <div class="class-name">우리 반</div>
+          <div class="class-count"><span id="sidebarStudentCount">0</span>명의 학생</div>
+        </div>
+        <div class="profile">
+          <div class="avatar" aria-hidden="true">선</div>
+          <div><div class="profile-name">담임 선생님</div><div class="profile-role">클래스 관리자</div></div>
+        </div>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div class="breadcrumb">우리 반 <strong>/ 출석 체크</strong></div>
+        <div class="top-actions"><span class="today-pill">✦&nbsp; 오늘도 좋은 하루예요</span></div>
+      </header>
+      <div class="content">
+        <section class="page-heading">
+          <div>
+            <div class="eyebrow">ATTENDANCE</div>
+            <h1>오늘의 출석</h1>
+            <p class="subtitle">학생들의 하루를 기록하고 출석 현황을 확인해 보세요.</p>
+          </div>
+          <div class="heading-actions">
+            <button class="button" id="exportButton" type="button">↓&nbsp; 출석부 내보내기</button>
+            <button class="button primary" id="openRosterButton" type="button">＋&nbsp; 학생 추가</button>
+          </div>
+        </section>
+        <section class="date-panel" aria-label="출석 날짜 선택">
+          <div class="date-navigation">
+            <button class="date-arrow" id="prevDay" type="button" aria-label="하루 전">‹</button>
+            <div class="date-value">
+              <input id="dateInput" type="date" aria-label="출석 날짜">
+              <div id="dateDescription" class="date-description"></div>
+            </div>
+            <button class="date-arrow" id="nextDay" type="button" aria-label="하루 다음">›</button>
+          </div>
+          <div class="date-side">
+            <button class="button" id="todayButton" type="button">오늘</button>
+            <button class="button" id="allPresentButton" type="button">✓&nbsp; 전체 출석</button>
+          </div>
+        </section>
+        <section class="summary-grid" aria-label="출석 현황">
+          <article class="summary-card" style="--accent:var(--green);--tint:var(--green-soft)">
+            <div class="summary-head"><span class="summary-dot"></span>출석</div>
+            <div class="summary-number" id="presentCount">0<span>명</span></div>
+          </article>
+          <article class="summary-card" style="--accent:var(--orange);--tint:var(--orange-soft)">
+            <div class="summary-head"><span class="summary-dot"></span>지각</div>
+            <div class="summary-number" id="lateCount">0<span>명</span></div>
+          </article>
+          <article class="summary-card" style="--accent:var(--blue);--tint:var(--blue-soft)">
+            <div class="summary-head"><span class="summary-dot"></span>조퇴</div>
+            <div class="summary-number" id="earlyCount">0<span>명</span></div>
+          </article>
+          <article class="summary-card" style="--accent:var(--red);--tint:var(--red-soft)">
+            <div class="summary-head"><span class="summary-dot"></span>결석</div>
+            <div class="summary-number" id="absentCount">0<span>명</span></div>
+          </article>
+        </section>
+        <section class="roster-card">
+          <div class="roster-header">
+            <div class="roster-title">학생 출석부 <span class="roster-total" id="rosterTotal">총 0명</span></div>
+            <div class="roster-tools">
+              <label class="search"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="이름으로 검색" aria-label="학생 이름 검색"></label>
+              <button class="button" id="manageRosterButton" type="button">학생 관리</button>
+            </div>
+          </div>
+          <div id="rosterContent"></div>
+          <div class="table-footer">
+            <span id="footerCount">학생을 추가해 출석 체크를 시작하세요.</span>
+            <div class="legend" aria-label="출석 상태 안내">
+              <span><i style="--dot:var(--green)"></i>출석</span>
+              <span><i style="--dot:var(--orange)"></i>지각</span>
+              <span><i style="--dot:var(--blue)"></i>조퇴</span>
+              <span><i style="--dot:var(--red)"></i>결석</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div class="modal-backdrop" id="rosterModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <h2 id="modalTitle">학생 추가</h2>
+      <p class="modal-copy">학생 이름을 입력해 주세요. 한 줄에 한 명씩 입력하거나 쉼표로 구분할 수 있어요.</p>
+      <textarea id="studentNames" placeholder="김민준&#10;이서연&#10;박지호"></textarea>
+      <div class="modal-footer">
+        <button class="button" id="cancelModalButton" type="button">취소</button>
+        <button class="button primary" id="saveRosterButton" type="button">학생 저장</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const STORAGE_KEY = "classnote-attendance-v1";
+      const STATUSES = {
+        unmarked: { label: "미체크", color: "#85899d", background: "#f3f4f7" },
+        present: { label: "출석", color: "#24865f", background: "#e9f7f1" },
+        late: { label: "지각", color: "#bd702b", background: "#fff4e8" },
+        early: { label: "조퇴", color: "#4b78c0", background: "#edf4ff" },
+        absent: { label: "결석", color: "#c75d62", background: "#fff0f0" }
+      };
+      const today = new Date();
+      const dateInput = document.getElementById("dateInput");
+      const rosterContent = document.getElementById("rosterContent");
+      const searchInput = document.getElementById("searchInput");
+      const modal = document.getElementById("rosterModal");
+      const nameInput = document.getElementById("studentNames");
+      let toastTimer;
+      let data = loadData();
+      function localDateString(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+      function loadData() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          return {
+            students: Array.isArray(saved.students) ? saved.students.filter(s => s && typeof s.id === "string" && typeof s.name === "string") : [],
+            records: saved.records && typeof saved.records === "object" ? saved.records : {}
+          };
+        } catch (error) {
+          console.error("출석 데이터를 불러오지 못했습니다.", error);
+          return { students: [], records: {} };
+        }
+      }
+      function persist() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (error) {
+          console.error("출석 데이터를 저장하지 못했습니다.", error);
+          showToast("저장 공간이 부족해 변경 사항을 저장하지 못했어요.");
+        }
+      }
+      function recordFor(date = dateInput.value) {
+        if (!data.records[date]) data.records[date] = {};
+        return data.records[date];
+      }
+      function escapeHtml(value) {
+        return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+      }
+      function render() {
+        const date = dateInput.value;
+        const parsed = new Date(`${date}T12:00:00`);
+        document.getElementById("dateDescription").textContent = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" }).format(parsed);
+        document.getElementById("rosterTotal").textContent = `총 ${data.students.length}명`;
+        document.getElementById("sidebarStudentCount").textContent = data.students.length;
+        const record = recordFor(date);
+        const counts = { present: 0, late: 0, early: 0, absent: 0 };
+        data.students.forEach(student => {
+          const status = record[student.id] || "unmarked";
+          if (Object.hasOwn(counts, status)) counts[status]++;
+        });
+        for (const [status, count] of Object.entries(counts)) document.getElementById(`${status}Count`).innerHTML = `${count}<span>명</span>`;
+        const query = searchInput.value.trim().toLocaleLowerCase("ko");
+        const students = data.students.filter(student => student.name.toLocaleLowerCase("ko").includes(query));
+        if (students.length === 0) {
+          const hasStudents = data.students.length > 0;
+          rosterContent.innerHTML = `<div class="empty-state"><div class="empty-icon" aria-hidden="true">${hasStudents ? "⌕" : "＋"}</div><div class="empty-title">${hasStudents ? "검색 결과가 없어요" : "아직 등록된 학생이 없어요"}</div><p class="empty-copy">${hasStudents ? "다른 이름으로 다시 검색해 보세요." : "학생 이름을 추가하면 이곳에서 간편하게 출석을 체크할 수 있어요."}</p>${hasStudents ? "" : '<button class="button primary" type="button" data-action="add">＋&nbsp; 학생 추가하기</button>'}</div>`;
+        } else {
+          rosterContent.innerHTML = `<div class="table-wrap"><table><thead><tr><th scope="col">번호</th><th scope="col">학생 이름</th><th scope="col">출석 상태</th><th scope="col">메모</th><th scope="col"><span class="sr-only">관리</span></th></tr></thead><tbody>${students.map((student, index) => {
+            const status = STATUSES[record[student.id]] ? record[student.id] : "unmarked";
+            return `<tr><td class="student-number">${String(index + 1).padStart(2, "0")}</td><td><div class="student-cell"><span class="student-avatar" aria-hidden="true">${escapeHtml(student.name.slice(0, 1))}</span>${escapeHtml(student.name)}</div></td><td><select class="status-select" data-student-id="${escapeHtml(student.id)}" aria-label="${escapeHtml(student.name)} 출석 상태" style="--status-color:${STATUSES[status].color};--status-bg:${STATUSES[status].background}">${Object.entries(STATUSES).map(([key, option]) => `<option value="${key}"${key === status ? " selected" : ""}>${option.label}</option>`).join("")}</select></td><td class="note-cell">${status === "unmarked" ? "—" : "기록됨"}</td><td><button class="remove-button" type="button" data-remove="${escapeHtml(student.id)}" aria-label="${escapeHtml(student.name)} 삭제" title="학생 삭제">×</button></td></tr>`;
+          }).join("")}</tbody></table></div>`;
+        }
+        const marked = data.students.filter(student => record[student.id] && record[student.id] !== "unmarked").length;
+        document.getElementById("footerCount").textContent = data.students.length ? `${marked}명 체크 완료 · 총 ${data.students.length}명` : "학생을 추가해 출석 체크를 시작하세요.";
+      }
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2400);
+      }
+      function openModal(manage = false) {
+        document.getElementById("modalTitle").textContent = manage ? "학생 관리" : "학생 추가";
+        document.querySelector(".modal-copy").textContent = manage
+          ? "학생 이름을 추가할 수 있어요. 등록된 학생을 삭제하려면 출석부에서 이름 옆 × 버튼을 눌러 주세요."
+          : "학생 이름을 입력해 주세요. 한 줄에 한 명씩 입력하거나 쉼표로 구분할 수 있어요.";
+        nameInput.value = "";
+        modal.classList.add("open");
+        nameInput.focus();
+      }
+      function closeModal() {
+        modal.classList.remove("open");
+      }
+      function saveStudents() {
+        const names = nameInput.value.split(/[\n,，]+/).map(name => name.trim()).filter(Boolean);
+        const known = new Set(data.students.map(student => student.name.toLocaleLowerCase("ko")));
+        const unique = [...new Set(names)].filter(name => {
+          const key = name.toLocaleLowerCase("ko");
+          if (known.has(key)) return false;
+          known.add(key);
+          return true;
+        });
+        if (unique.length === 0) {
+          showToast(names.length ? "새로 추가할 학생이 없어요." : "학생 이름을 입력해 주세요.");
+          return;
+        }
+        data.students.push(...unique.map(name => ({ id: crypto.randomUUID(), name })));
+        persist();
+        render();
+        closeModal();
+        showToast(`${unique.length}명의 학생을 추가했어요.`);
+      }
+      function shiftDate(amount) {
+        const date = new Date(`${dateInput.value}T12:00:00`);
+        date.setDate(date.getDate() + amount);
+        dateInput.value = localDateString(date);
+        render();
+      }
+      function exportCsv() {
+        if (data.students.length === 0) {
+          showToast("내보낼 학생이 없습니다. 먼저 학생을 추가해 주세요.");
+          return;
+        }
+        const record = recordFor();
+        const rows = [["날짜", "번호", "이름", "출석 상태"], ...data.students.map((student, index) => [
+          dateInput.value,
+          String(index + 1),
+          student.name,
+          STATUSES[record[student.id] || "unmarked"].label
+        ])];
+        const csv = "\uFEFF" + rows.map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+        const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `출석부_${dateInput.value}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        showToast("출석부를 CSV 파일로 내보냈어요.");
+      }
+      dateInput.value = localDateString(today);
+      document.getElementById("prevDay").addEventListener("click", () => shiftDate(-1));
+      document.getElementById("nextDay").addEventListener("click", () => shiftDate(1));
+      document.getElementById("todayButton").addEventListener("click", () => {
+        dateInput.value = localDateString(today);
+        render();
+      });
+      dateInput.addEventListener("change", render);
+      searchInput.addEventListener("input", render);
+      document.getElementById("openRosterButton").addEventListener("click", () => openModal());
+      document.getElementById("manageRosterButton").addEventListener("click", () => openModal(true));
+      document.getElementById("cancelModalButton").addEventListener("click", closeModal);
+      document.getElementById("saveRosterButton").addEventListener("click", saveStudents);
+      document.getElementById("exportButton").addEventListener("click", exportCsv);
+      document.getElementById("allPresentButton").addEventListener("click", () => {
+        if (data.students.length === 0) {
+          showToast("먼저 학생을 추가해 주세요.");
+          return;
+        }
+        data.students.forEach(student => { recordFor()[student.id] = "present"; });
+        persist();
+        render();
+        showToast("모든 학생을 출석으로 체크했어요.");
+      });
+      rosterContent.addEventListener("change", event => {
+        const select = event.target.closest(".status-select");
+        if (!select) return;
+        recordFor()[select.dataset.studentId] = select.value;
+        persist();
+        render();
+      });
+      rosterContent.addEventListener("click", event => {
+        if (event.target.closest('[data-action="add"]')) {
+          openModal();
+          return;
+        }
+        const removeButton = event.target.closest("[data-remove]");
+        if (!removeButton) return;
+        const student = data.students.find(item => item.id === removeButton.dataset.remove);
+        if (!student || !window.confirm(`${student.name} 학생을 출석부에서 삭제할까요?`)) return;
+        data.students = data.students.filter(item => item.id !== student.id);
+        Object.values(data.records).forEach(record => { delete record[student.id]; });
+        persist();
+        render();
+        showToast(`${student.name} 학생을 삭제했어요.`);
+      });
+      document.getElementById("allPresentButton").addEventListener("contextmenu", event => event.preventDefault());
+      document.getElementById("studentNames").addEventListener("keydown", event => {
+        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") saveStudents();
+      });
+      modal.addEventListener("click", event => {
+        if (event.target === modal) closeModal();
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && modal.classList.contains("open")) closeModal();
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
